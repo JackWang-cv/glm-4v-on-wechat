@@ -1,7 +1,7 @@
 from zhipuai import ZhipuAI
 # 词条改一下，变成
 def send(text, url):
-    client = ZhipuAI(api_key="76d434602d113398b0f0c9e5cb523534.d432orwi7ReViJfU")
+    client = ZhipuAI(api_key="")
     response = client.chat.completions.create(
         model="glm-4v",
         messages=[

@@ -9,8 +9,8 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 # 配置信息 modify
 
-secret_id = 'AKIDGf3Rm2DTju032udCczMcr1LuZLAuY9d2'        # 替换为你的SecretId
-secret_key = 'Sq8QduBEAzl161oW6Xs7HPcIwVK4fAbw'      # 替换为你的SecretKey
+secret_id = ''        # 替换为你的SecretId
+secret_key = ''      # 替换为你的SecretKey
 region = 'ap-guangzhou'             # 替换为你Bucket所在的地域
 bucket = 'zhipu-1328245395' # 替换为你的存储桶名称
 
