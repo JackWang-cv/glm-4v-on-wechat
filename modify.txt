@@ -1,0 +1,27 @@
+修改了
+1. channel/chat_channel.py 67 任意群都可以使用机器人的回复
+2. channel/chat_channel.py 84 86 添加用户昵称，方便输出时用@用户形式进行输出
+3. channel/chat_channel.py 151 修改了用户不需要加前缀就能调用API，可用可不用
+4. channel/chat_channel.py 174 添加了图生文操作，利用glm-4v，初始化prompt
+5. channel/chat_channel.py 191-209 使用投票形式，对票数大于2的输出语句进行过滤。
+6. channel/chat_channel.py 298-306 修改输出内容的格式，用@用户形式进行返回
+
+7. channel/wechat_message  32 增加了下载图片到本地,之后上传至腾讯COS，之后在本地删除
+
+8. channel/wechat_channel  133 增加了conf()的，使得用户必须@机器人才能得到回复
+
+9. channel/chat_message    62 89 添加一个属性，方便本地删除用户上传的照片
+
+10.zhipuai_bot             91-98 添加图生文调用glm-4v
+
+11. config.json 灵活处理
+
+添加了
+1. bot/zhipuai/zhipu_ai_visioni.py  调用glm-4v的api。
+2. cloud_photo.py tencent_cos.py 一开始使用cloundinary,但是外网速度慢，导致连接不到 换成腾讯云COS效果显著
+
+Q:
+1. 图片如何下载到本地  -解决且上传后能删除，不暂用服务器资源。
+2. 将图片地址转化为http -用cloudinary 或者 服务器开8080端口(后续可做)  腾讯cos
+3. 图片辨别食物 -if 投票判断
+4. 防止封号 -待解决
