@@ -207,11 +207,12 @@ class ChatChannel(Channel):
                 if count >= 2:
                     logger.info(f'{reply.content = }')
                     return
-        temp = reply.content
-        temp = temp.split('/')
-        for i in range(len(temp)):
-            temp[i] = temp[i].replace('：', ':\n')
-        reply.content = '\n\n'.join(temp[1:])
+            else:
+                temp = reply.content.split('/')
+                for i in range(1, len(temp)):
+                    temp[i] = temp[i].replace('：', ':\n')
+                reply.content = '\n\n'.join(temp[1:])
+            
         logger.debug("[chat_channel] ready to decorate reply: {}".format(reply))
 
         # reply的包装步骤
