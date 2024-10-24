@@ -137,6 +137,7 @@ class ChatChannel(Channel):
                             pattern = f"@{re.escape(context['msg'].self_display_name)}(\u2005|\u0020)"
                             subtract_res = re.sub(pattern, r"", content)
                         content = subtract_res
+                flag = False  # 写死了 后续可改进
                 if not flag:
                     if context["origin_ctype"] == ContextType.VOICE:
                         logger.info("[chat_channel]receive group voice, but checkprefix didn't match")
@@ -172,12 +173,15 @@ class ChatChannel(Channel):
                 context["desire_rtype"] = ReplyType.VOICE
         # 输入是图片的处理
         elif context.type == ContextType.IMAGE:
-            context["text"] = "你现在是针对肥胖群体的营养分析师，检测图中是否出现食物实物(图片中的食物文字名不算出现食物），若图中出现食物实物(图片中的食物文字名不算出现食物)，请按照下面模板输出（模板的内容在输出内容不要重复使用）。" \
-                              "/1.图中所展示的食物种类。" \
-                              "/2.不考虑食材具体份量，大概分析每一种食物在本次图片中包含的热量。50字" \
-                              "/3.给出总热量，碳水化合物占比，蛋白质占比，脂类占比。给出结果就行。20字" \
-                              "/4.对于减重期的人给出这道菜的营养分析与建议100字。" \
-                              "/若没有检测到食物则返回没有."
+            context["text"] = "作为一名专注于肥胖群体的营养分析师，你的任务是检测图像中是否出现了Food。" \
+                                "如果图中有Food，请根据以下键名，输出一个包含这些信息的 JSON 格式列表：" \
+                                "1. food_types: 图中所展示的食物种类" \
+                                "2. calories_per_food: 每一种食物的大致热量分析" \
+                                "3. total_calories: 图片中所有食物的总热量" \
+                                "4. carbohydrate_ratio: 碳水化合物在总热量中的占比" \
+                                "5. protein_ratio: 蛋白质在总热量中的占比" \
+                                "6. fat_ratio: 脂类在总热量中的占比" \
+                                "如果没有检测到食物，则返回：{'result': '没有检测到食物'}"
             pass
         return context
 
@@ -187,31 +191,45 @@ class ChatChannel(Channel):
         logger.debug("[chat_channel] ready to handle context: {}".format(context))
         # reply的构建步骤
         reply = self._generate_reply(context)
+        logger.info(f'{reply.content = }')
+        # upgrade-wjj
         if context.type == ContextType.IMAGE:
-            dit = ["抱歉", "无法", "没有", "对不起", "未", "缺乏", "没有检测到食物","未检测到食物"]
-            count = 0
-            for word in dit:
-                if word in reply.content :
-                    count += 1
-                logger.info(f'{count = }')
-            if count >= 2:
-                logger.info(f'{reply.content = }')
-                context["text"] = "你现在是针对肥胖群体的营养分析师, 如果输入的图中有体重记录信息相关的，请分析图片显示的体重信息或者变化趋势，给予体重相关的合适的建议，100字" \
-                                  "/没有体重信息的话则输出返回没有体重。"
+            reply.content = analysis_food(reply.content)
+            if "没有检测到食物" in reply.content:
+                # 进行体重分析
+                context["text"] = '你现在是针对肥胖群体的营养分析师, 如果输入的图中有体重记录信息相关的，输出体重信息{"weights":"xx"},否则输出{"answer"":"None"}'
                 reply = self._generate_reply(context)
-                count = 0
-                for word in dit:
-                    if word in reply.content :
-                        count += 1
-                    logger.info(f'{count = }')
-                if count >= 2:
-                    logger.info(f'{reply.content = }')
-                    return
-            else:
-                temp = reply.content.split('/')
-                for i in range(1, len(temp)):
-                    temp[i] = temp[i].replace('：', ':\n')
-                reply.content = '\n\n'.join(temp[1:])
+                logger.info(f'{reply.content = }')
+                sign = analysis_weight(reply.content)
+                if sign == '':
+                    reply.content = "未检测到目标，或因多种因素所致，敬请谅解。"
+                else:
+                    reply.content = sign
+        # if context.type == ContextType.IMAGE:
+        #     dit = ["抱歉", "无法", "没有", "对不起", "未", "缺乏", "没有检测到食物","未检测到食物"]
+        #     count = 0
+        #     for word in dit:
+        #         if word in reply.content :
+        #             count += 1
+        #         logger.info(f'{count = }')
+        #     if count >= 2:
+        #         logger.info(f'{reply.content = }')
+        #         context["text"] = "你现在是针对肥胖群体的营养分析师, 如果输入的图中有体重记录信息相关的，请分析图片显示的体重信息或者变化趋势，给予体重相关的合适的建议，100字" \
+        #                           "/没有体重信息的话则输出返回没有体重。"
+        #         reply = self._generate_reply(context)
+        #         count = 0
+        #         for word in dit:
+        #             if word in reply.content :
+        #                 count += 1
+        #             logger.info(f'{count = }')
+        #         if count >= 2:
+        #             logger.info(f'{reply.content = }')
+        #             return
+        #     else:
+        #         temp = reply.content.split('/')
+        #         for i in range(1, len(temp)):
+        #             temp[i] = temp[i].replace('：', ':\n')
+        #         reply.content = '\n\n'.join(temp[1:])
             
         logger.debug("[chat_channel] ready to decorate reply: {}".format(reply))
 
@@ -454,3 +472,59 @@ def check_contain(content, keyword_list):
         if content.find(ky) != -1:
             return True
     return None
+
+def analysis_food(ans):
+    ans = ans.replace("\n","")
+    cleaned_ans = ans.replace('```json', '').replace('```', '')
+    data = json.loads(cleaned_ans)
+    if 'result' in data:
+        # 需要调整
+        if data['result'] == "有食物":
+            pass
+        else:
+            return data['result']
+    
+    # 提取 food_types 列表
+    food_types = data['food_types']
+
+    # 提取 calories_per_food 的键值对，并将其作为列表
+    calories_per_food = list(data['calories_per_food'].items())
+
+    # 提取其余的 ratio 信息
+    total_calories = data['total_calories']
+    carbohydrate_ratio = data['carbohydrate_ratio']
+    protein_ratio = data['protein_ratio']
+    fat_ratio = data['fat_ratio']
+
+    # 将所有内容放入一个新的列表中
+    result_list = [
+        food_types, 
+        calories_per_food, 
+        total_calories, 
+        carbohydrate_ratio, 
+        protein_ratio, 
+        fat_ratio
+    ]
+
+    # 输出结果列表
+    res = "图中展示了{}个菜：".format(len(result_list[0]))
+    for i in range(len(result_list[0])-1):
+        res += result_list[0][i] + '，'
+    res += result_list[0][-1] + '\n\n'
+    for i, (name, col) in enumerate(result_list[1]):
+        res += '{}.{}:{}'.format(i+1, name, col)
+        res += '\n'
+    res += '\n总热量约为{}。其中碳水化合物占比{}，蛋白质占比{}，脂类占比{}'.format(result_list[2], result_list[3], result_list[4], result_list[5])
+    return res
+
+def analysis_weight(ans):
+    ans = ans.replace("\n","")
+    cleaned_ans = ans.replace('```json', '').replace('```', '')
+    data = json.loads(cleaned_ans)
+    if 'answer' in data:
+        return ''
+    else:
+        res = ''
+        for v in data['weights']:
+            res += str(v) + ' '
+        return res

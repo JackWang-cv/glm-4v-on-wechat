@@ -130,9 +130,9 @@ class WechatChannel(ChatChannel):
             self.user_id = itchat.instance.storageClass.userName
             self.name = itchat.instance.storageClass.nickName
             logger.info("Wechat login success, user_id: {}, nickname: {}".format(self.user_id, self.name))
-            # 补充前缀 使得必须@机器人才能得到回复，正常用户聊天并不会处理其信息。
-            conf().get("single_chat_prefix").append(self.name)
-            conf().get("group_chat_prefix").append(self.name)
+            # 补充前缀 使得必须@机器人才能得到回复，正常用户聊天并不会处理其信息。不需要聊天可注释
+            # conf().get("single_chat_prefix").append(self.name)
+            # conf().get("group_chat_prefix").append(self.name)
             # start message listener 监听信息
             itchat.run()
         except Exception as e:

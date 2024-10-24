@@ -3,28 +3,24 @@ from zhipuai import ZhipuAI
 def send(text, url):
     client = ZhipuAI(api_key="")
     response = client.chat.completions.create(
-        model="glm-4v",
+        model="glm-4v",  # 填写需要调用的模型名称 4v比4v-plus好
         messages=[
+        {
+            "role": "user",
+            "content": [
             {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": text
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": url
-                        }
-                    }
-                ]
+                "type": "image_url",
+                "image_url": {
+                    "url" : url
+                }
+            },
+            {
+                "type": "text",
+                "text": text
             }
-        ],
-        top_p=0.7,
-        temperature=0.2,
-        max_tokens=1024,
-        stream=False,
+            ]
+        }
+        ]
     )
     return response.choices[0].message
 

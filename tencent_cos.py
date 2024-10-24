@@ -11,8 +11,8 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 secret_id = ''        # 替换为你的SecretId
 secret_key = ''      # 替换为你的SecretKey
-region = 'ap-guangzhou'             # 替换为你Bucket所在的地域
-bucket = 'zhipu-1328245395' # 替换为你的存储桶名称
+region = ''             # 替换为你Bucket所在的地域
+bucket = '' # 替换为你的存储桶名称
 
 # 初始化配置
 config = CosConfig(Region=region, SecretId=secret_id, SecretKey=secret_key)
@@ -26,7 +26,6 @@ def upload_image_to_cos(local_file_path):
     :return: 上传结果
     """
     key = os.path.basename(local_file_path)  # 使用文件名作为存储桶中的文件名
-
     try:
         response = client.upload_file(
             Bucket=bucket,
@@ -37,7 +36,7 @@ def upload_image_to_cos(local_file_path):
             EnableMD5=False
         )
         logging.info(f"Upload file {local_file_path} success: {response}")
-        return 'https://zhipu-1328245395.cos.ap-guangzhou.myqcloud.com/' + key
+        return 'https://zhipuai-on-wechat-1319111495.cos.ap-guangzhou.myqcloud.com/' + key  # 需更换
     except Exception as e:
         logging.error(f"Upload file {local_file_path} failed: {str(e)}")
         return None
